@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -24,19 +24,31 @@ export class UsersService {
     return user;
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    const users = await this.UserModel.find().exec();
+    if (!users) {
+      throw new NotFoundException("Users not found");
+    }
+    return users;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string):Promise <User | null>  {
+  try {
+    const user = await this.UserModel.findById(id).exec();
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    return user;
+  } catch (error) {
+    throw new BadRequestException('Invalid ID format');
+  }
+}
+
+  async update( updateUserDto: UpdateUserDto) {
+    return await this.UserModel.updateOne({_id: updateUserDto._id}, {...updateUserDto}).exec();
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    return await this.UserModel.deleteOne({_id:id});
   }
 }
