@@ -10,13 +10,13 @@ import * as bcrypt from 'bcryptjs';
 export class UsersService {
   constructor(@InjectModel(User.name) private UserModel: Model<User>) { }
   
-  async hasdpassword(password: string) {
+async hasdpassword(password: string) {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
     return hash;
   }
 
-  async create(createUserDto: CreateUserDto) {
+async create(createUserDto: CreateUserDto) {
     const email = createUserDto.email;
     const password = await this.hasdpassword(createUserDto.password);
     const name = createUserDto.name;
@@ -32,7 +32,7 @@ export class UsersService {
     return users;
   }
 
-  async findOne(id: string):Promise <User | null>  {
+async findOne(id: string):Promise <User | null>  {
   try {
     const user = await this.UserModel.findById(id).exec();
     if (!user) {
@@ -44,11 +44,28 @@ export class UsersService {
   }
 }
 
-  async update( updateUserDto: UpdateUserDto) {
+async update( updateUserDto: UpdateUserDto) {
     return await this.UserModel.updateOne({_id: updateUserDto._id}, {...updateUserDto}).exec();
   }
 
-  async remove(id: string) {
+async remove(id: string) {
     return await this.UserModel.deleteOne({_id:id});
+}
+  
+async findOneByUsername(username : string): Promise<User | null> {
+  try {
+    const user = await this.UserModel.findOne({email : username}).exec();
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    return user;
+  } catch (error) {
+    throw new BadRequestException('Invalid ID format');
   }
 }
+  
+  async isValidPass(password: string,hash:string) {
+    return bcrypt.compare(password, hash);
+  }
+}
+
