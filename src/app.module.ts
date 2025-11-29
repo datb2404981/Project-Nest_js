@@ -3,25 +3,36 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import mongooseDelete from 'mongoose-delete';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersService } from './users/users.service';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // ✅ load file .env toàn cục
+      isGlobal: true,
     }),
-    // dung de ket noi voi database
+
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'), 
-      }),
       inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        uri: config.get<string>('MONGODB_URI'),
+        connectionFactory: (connection) => {
+          connection.plugin(mongooseDelete, {
+            deletedAt: true,
+            deletedBy: true,
+            overrideMethods: 'all', // or true
+          });
+          return connection;
+        },
+      }),
     }),
+
     UsersModule,
     AuthModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

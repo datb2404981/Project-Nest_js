@@ -1,71 +1,76 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import {
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
+import { plainToInstance } from 'class-transformer';
+import { SoftDeleteModel } from 'mongoose-delete';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private UserModel: Model<User>) { }
-  
-async hasdpassword(password: string) {
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: SoftDeleteModel<UserDocument>,
+  ) {}
+
+  async hashPassword(password: string) {
     const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-    return hash;
+    return bcrypt.hash(password, salt);
   }
 
-async create(createUserDto: CreateUserDto) {
-    const email = createUserDto.email;
-    const password = await this.hasdpassword(createUserDto.password);
-    const name = createUserDto.name;
-    let user = await this.UserModel.create({ email, password, name });
-    return user;
+  async create(dto: CreateUserDto) {
+    const password = await this.hashPassword(dto.password);
+
+    const created = await this.userModel.create({
+      ...dto,
+      password,
+    });
+
+    const userObj = await this.userModel
+      .findOne({ _id: created._id })
+      .lean()
+      .exec();
+
+    return plainToInstance(User, userObj);
   }
 
   async findAll() {
-    const users = await this.UserModel.find().exec();
-    if (!users) {
-      throw new NotFoundException("Users not found");
-    }
-    return users;
+    const users = await this.userModel.find().lean().exec();
+    return users.map((u) => plainToInstance(User, u));
   }
 
-async findOne(id: string):Promise <User | null>  {
-  try {
-    const user = await this.UserModel.findById(id).exec();
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-    return user;
-  } catch (error) {
-    throw new BadRequestException('Invalid ID format');
-  }
-}
-
-async update( updateUserDto: UpdateUserDto) {
-    return await this.UserModel.updateOne({_id: updateUserDto._id}, {...updateUserDto}).exec();
+  async findOne(id: string) {
+    const user = await this.userModel.findById(id).lean().exec();
+    
+    return (user)? plainToInstance(User, user) :null;
   }
 
-async remove(id: string) {
-    return await this.UserModel.deleteOne({_id:id});
-}
-  
-async findOneByUsername(username : string): Promise<User | null> {
-  try {
-    const user = await this.UserModel.findOne({email : username}).exec();
-    if (!user) {
-      throw new NotFoundException("User not found");
-    }
-    return user;
-  } catch (error) {
-    throw new BadRequestException('Invalid ID format');
+  async update(dto: UpdateUserDto) {
+    await this.userModel.updateOne({ _id: dto._id }, dto).exec();
+    const updated = await this.userModel.findById(dto._id).lean().exec();
+    return plainToInstance(User, updated);
   }
-}
-  
-  async isValidPass(password: string,hash:string) {
+
+  async remove(id: string) {
+    return this.userModel.deleteById(id);
+  }
+
+  async findOneByUsername(username: string) { 
+    if (!username) return null;
+    const user = await this.userModel
+      .findOne({ email: username })
+      .lean()
+      .exec();
+
+    return user ? plainToInstance(User, user) : null;
+  }
+
+  async isValidPass(password: string, hash: string) {
     return bcrypt.compare(password, hash);
   }
 }
-

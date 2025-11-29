@@ -1,19 +1,35 @@
-import { NestFactory } from '@nestjs/core';
+// src/main.ts
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // const reflector = app.get(Reflector);
+  // app.useGlobalGuards(new JwtAuthGuard(reflector));
+
+  // LẤY CONFIG TRƯỚC KHI DÙNG
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT') || 8080;   // ← thêm || 8080
+
+  // Cấu hình views + static
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  app.setViewEngine('hbs');
-  const configService = app.get(ConfigService);
+  app.setViewEngine('ejs');        // hoặc 'ejs' tùy bạn
 
-  const port = configService.get('PORT');
+  // Các middleware khác
   app.useGlobalPipes(new ValidationPipe());
+  app.enableCors({
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  });
+
   await app.listen(port);
+  console.log(`Server đang chạy tại: http://localhost:${port}`);
 }
 bootstrap();

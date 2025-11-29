@@ -1,4 +1,4 @@
-import { Controller, Get, Render } from '@nestjs/common';
+import { Controller, Get, Post, Render, Request, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -6,15 +6,20 @@ import { ConfigService } from '@nestjs/config';
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {}
 
 
-  @Get()
-  @Render("home.ejs")
-  getHello() {
-    console.log(">>> check port: ", this.configService.get<string>("PORT"))
-    const message =   this.appService.getHello();
-    return {message}
+@Get()
+@Render('home.ejs')
+getHello() {
+  return { message: 'Hello' };
+}
+
+
+  
+  @Get('profile')
+  getProfile(@Request() req) {
+    return req.user;
   }
 }
