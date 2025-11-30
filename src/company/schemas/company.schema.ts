@@ -31,13 +31,22 @@ export class Company{
   }
   })
   createdBy: { _id:Types.ObjectId, email:string };
-
+  
   @Prop({
     type: {
     _id: { type: Types.ObjectId, ref: 'User' },
     email: { type: String },
-  }})
-  deleteBy: { _id:Types.ObjectId, email:string };
+  }
+  })
+  updateBy: { _id: Types.ObjectId, email: string };
+  
+  @Prop({
+  type: {
+      _id: { type: Types.ObjectId, ref: 'User' },
+      email: { type: String },
+  }
+  })
+  deletedBy: { _id: Types.ObjectId, email: string };
 }
 
 export const CompanySchema = SchemaFactory.createForClass(Company);
