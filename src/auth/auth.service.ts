@@ -1,3 +1,4 @@
+import { CreateUserDto, RegisterUserDto } from '@/users/dto/create-user.dto';
 import { IUser } from '@/users/user.interface';
 import { UsersService } from '@/users/users.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -19,6 +20,8 @@ export class AuthService {
     }
     return null
   }
+
+
   async login(user: IUser) {
     if (!user) {
       throw new UnauthorizedException('Không tìm thấy thông tin người dùng, vui lòng kiểm tra lại tài khoản/mật khẩu');
@@ -42,4 +45,8 @@ export class AuthService {
     });
     return { message: '✅ Logged out successfully' };
   }
+
+  async register(dto: RegisterUserDto, role: string) {
+    return await this.usersService.create(dto, role);
+  };
 }

@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Render, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Render, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LocalAuthGuard } from './local-auth.guard';
+import { ResponseMessage } from '@/decorator/customize';
+import { CreateUserDto, RegisterUserDto } from '@/users/dto/create-user.dto';
 
 
 @Controller("auth")
@@ -22,5 +24,15 @@ export class AuthController {
   async logout(@Request() req) {
     const token = req.headers.authorization?.split(' ')[1];
     return { message: '✅ Logged out successfully' };
+  }
+
+  @Post('register')
+    @ResponseMessage("Register a new user")
+  async register(@Body() dto: RegisterUserDto) {
+    const { data, id } = await this.authService.register(dto, "USER");
+    return {
+      _id: id,
+      createdAt: data.createdAt
+    };
   }
 }
