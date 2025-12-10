@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Post, Render, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Render, Request, Res, UseGuards, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { LocalAuthGuard } from './local-auth.guard';
-import { ResponseMessage } from '@/decorator/customize';
+import { ResponseMessage, User } from '@/decorator/customize';
 import { CreateUserDto, RegisterUserDto } from '@/users/dto/create-user.dto';
+import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
+import { IUser } from '@/users/user.interface';
 
 
 @Controller("auth")
@@ -15,24 +18,57 @@ export class AuthController {
   
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  handleLogin(@Request() req) {
-    return this.authService.login(req.user);
+  @ResponseMessage("User Login")
+  async handleLogin(
+    @Request() req,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return await this.authService.login(req.user,response);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Request() req) {
-    const token = req.headers.authorization?.split(' ')[1];
-    return { message: '✅ Logged out successfully' };
+  @ResponseMessage("Logout User")
+  async logout(@Res({ passthrough: true }) res:Response,@User() user:IUser) {
+    return await this.authService.logout(res,user)
   }
 
   @Post('register')
-    @ResponseMessage("Register a new user")
+  @ResponseMessage("Register a new user")
   async register(@Body() dto: RegisterUserDto) {
     const { data, id } = await this.authService.register(dto, "USER");
     return {
       _id: id,
       createdAt: data.createdAt
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('account')
+  @ResponseMessage("Get user information")
+  async account(@User() user:IUser) {
+    return user;
+  }
+
+
+  @ResponseMessage("Get User by refresh token")
+  @Get('refresh')
+  async refresh(
+    @Request() req,
+    @Res({ passthrough: true }) response: Response,
+    @Query('refresh_token') refreshTokenQuery?: string,
+  ) {
+    // Ưu tiên đọc từ cookie (đã bật cookie-parser), fallback header nếu cần
+    const refreshToken =
+      req.cookies?.refresh_token ||
+      refreshTokenQuery ||
+      req.headers['refresh_token'] ||
+      req.headers['authorization']?.toString().split(' ')[1];
+
+    if (!refreshToken || refreshToken === 'undefined' || refreshToken === 'null') {
+      throw new BadRequestException('Thiếu refresh token');
+    }
+
+    return await this.authService.processNewToken(refreshToken as string, response);
   }
 }

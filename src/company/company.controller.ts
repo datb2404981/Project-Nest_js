@@ -6,7 +6,7 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { ResponseMessage, User } from '@/decorator/customize';
 import { IUser } from '@/users/user.interface';
 
-@Controller('company')
+@Controller('companies')
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) { }
   
@@ -19,10 +19,13 @@ export class CompanyController {
   @Get()
   @ResponseMessage("Fetch list company with paginate")
   async findAll(
-    @Query("page") currentPage: string,
-    @Query("limit") limit: string,
-    @Query() qs:string) {
-    return this.companyService.findAll(+currentPage,+limit,qs);
+    @Query('current') currentPage: string,
+    @Query('pageSize') pageSize: string,
+    @Query('pagesize') pageSizeLower: string,
+    @Query() qs: string,
+  ) {
+    const limit = pageSize ?? pageSizeLower;
+    return this.companyService.findAll(+currentPage, +limit, qs);
   }
 
   @Get(':id')

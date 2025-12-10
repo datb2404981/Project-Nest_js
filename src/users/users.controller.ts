@@ -27,10 +27,13 @@ export class UsersController {
   @ResponseMessage("Fetch user with paginate")
   @Get()
   findAll(
-    @Query("page") currentPage: string,
-    @Query("limit") limit: string,
-    @Query() qs:string) {
-    return this.usersService.findAll(+currentPage,+limit,qs);
+    @Query('current') currentPage: string,
+    @Query('pageSize') pageSize: string,
+    @Query('pagesize') pageSizeLower: string,
+    @Query() qs: string,
+  ) {
+    const limit = pageSize ?? pageSizeLower;
+    return this.usersService.findAll(+currentPage, +limit, qs);
   }
 
   @UseGuards(JwtAuthGuard)

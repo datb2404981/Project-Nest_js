@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { TransformInterceptor } from './core/transform.interceptor';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -17,7 +18,7 @@ async function bootstrap() {
 
   // LẤY CONFIG TRƯỚC KHI DÙNG
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 8080;   // ← thêm || 8080
+  const port = configService.get<number>('PORT') || 8080;
 
   // Cấu hình views + static
   app.useStaticAssets(join(__dirname, '..', 'public'));
@@ -27,6 +28,7 @@ async function bootstrap() {
   // Các middleware khác
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
+  app.use(cookieParser());
 
   //config versionsing
   app.setGlobalPrefix('api/')
@@ -35,10 +37,12 @@ async function bootstrap() {
     defaultVersion:['1','2']
 });
 
-  app.enableCors({
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  });
+app.enableCors({
+  origin: true, // FE domain
+  credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+});
+
 
   await app.listen(port);
   console.log(`Server đang chạy tại: http://localhost:${port}`);

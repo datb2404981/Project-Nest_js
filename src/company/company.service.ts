@@ -33,8 +33,9 @@ export class CompanyService {
     }
 
     const { filter = {}, sort, projection, population } = parsed;
-    delete (filter as any).page;
-    delete (filter as any).limit;
+    delete (filter as any).current;
+    delete (filter as any).pageSize;
+    delete (filter as any).pagesize;
 
     const pageNumber = Number.isFinite(+page) && +page > 0 ? +page : 1;
     const limitNumber = Number.isFinite(+limit) && +limit > 0 ? +limit : 10;

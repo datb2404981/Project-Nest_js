@@ -58,8 +58,9 @@ export class UsersService {
       throw new BadRequestException('Query filter phải là JSON hợp lệ, ví dụ filter={"name":"/fpt/i"} hoặc name=/fpt/i');
     }
     const { filter = {}, sort, projection, population } = parsed;
-    delete (filter as any).page;
-    delete (filter as any).limit;
+    delete (filter as any).current;
+    delete (filter as any).pageSize;
+    delete (filter as any).pagesize;
 
     const pageNumber = Number.isFinite(+page) && +page > 0 ? +page : 1;
     const limitNumber = Number.isFinite(+limit) && +limit > 0 ? +limit : 10;
@@ -113,7 +114,7 @@ export class UsersService {
     }
 
     const updated = await this.userModel.updateOne(
-      { _id: dto._id, isDeleted: false },
+      { _id: dto._id, deleted: false },
       {
         $set: {
           ...dto,
@@ -129,7 +130,7 @@ export class UsersService {
   }
 
   async remove(id: string, user: IUser) {
-    const userDelete = await this.userModel.findOne({ _id: id, isDeleted: false });
+    const userDelete = await this.userModel.findOne({ _id: id, deleted: false });
     if (!userDelete) {
       throw new NotFoundException("User không tồn tại hoặc đã bị xóa.");
     }
@@ -156,5 +157,21 @@ export class UsersService {
 
   async isValidPass(password: string, hash: string) {
     return bcrypt.compare(password, hash);
+  }
+
+  async updateUserRefreshToken(refreshToken: string, _id: string) {
+    return await this.userModel
+      .updateOne({ _id }, { $set: { refreshToken } })
+      .exec();
+  }
+
+  async findUserByToken(refreshToken: string) {
+    const user = await this.userModel
+      .findOne({ refreshToken })
+      .select("-password")
+      .lean()
+      .exec();
+    
+    return user;
   }
 }
