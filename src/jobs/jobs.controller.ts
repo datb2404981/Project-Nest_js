@@ -3,7 +3,7 @@ import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { ResponseMessage, User } from '@/decorator/customize';
+import { Public, ResponseMessage, User } from '@/decorator/customize';
 import { IUser } from '@/users/user.interface';
 
 @Controller('jobs')
@@ -13,12 +13,12 @@ export class JobsController {
   @UseGuards(JwtAuthGuard)
   @ResponseMessage("Create a new job")
   @Post()
-  create(@Body() createJobDto: CreateJobDto) {
-    return this.jobsService.create(createJobDto);
+  create(@Body() createJobDto: CreateJobDto,@User() user:IUser) {
+    return this.jobsService.create(createJobDto,user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
+  @Public()
   @ResponseMessage("Fetch jobs with pagination")
   findAll(
     @Query('current') currentPage: string,
@@ -34,8 +34,9 @@ export class JobsController {
     return this.jobsService.findAll(pageParam,limit,qs);
   }
 
-  @UseGuards(JwtAuthGuard)
+  
   @Get(':id')
+  @Public()
   @ResponseMessage("Fetch a job by id")
   findOne(@Param('id') id: string) {
     return this.jobsService.findOne(id);

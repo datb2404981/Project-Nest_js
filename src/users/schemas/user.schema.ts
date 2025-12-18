@@ -24,15 +24,27 @@ export class User {
   address: string;
 
   @Prop({
-  type: { _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' }, name: { type: String },}
+    type: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+      name: { type: String },
+    }
   })
   company: {
     _id: mongoose.Types.ObjectId;
   name: string;
   };
 
-  @Prop()
-  role: string;
+  @Prop({
+    type: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Role' },
+      name : {type: String}
+    }
+  })
+  role: {
+    _id: mongoose.Types.ObjectId;
+  name: string;
+  };
+
 
   @Prop()
   refreshToken: string;

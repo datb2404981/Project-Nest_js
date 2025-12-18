@@ -66,7 +66,8 @@ export class CompanyService {
   }
 
   async findOne(id: string) {
-    const company = await this.companyModel.findOne({ _id: id, isDeleted: false }).exec();
+    const company = await this.companyModel.findOne({ _id: id, isDeleted: false })
+    .lean().exec();
     if (!company) {
       throw new NotFoundException(`Không tìm thấy company với id: ${id}`);
     }

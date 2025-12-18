@@ -6,6 +6,9 @@ import * as mongooseDelete from 'mongoose-delete';
 export type CompanyDocument = Company & Document;
 @Schema({ timestamps: true })
 export class Company{
+  @Prop({ type: String, default: () => new Types.ObjectId().toString() })
+  _id: string;
+
   @Prop()
   name: string;
 

@@ -1,9 +1,15 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Types,Document, Date } from "mongoose";
+import { Types, Document, Date } from "mongoose";
 
 export type JobDocument = Job & Document;
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  _id: false, // we define our own string _id to match existing data
+})
 export class Job {
+  @Prop({ type: String, default: () => new Types.ObjectId().toString() })
+  _id: string;
+
   @Prop()
   name: string
   
@@ -13,10 +19,11 @@ export class Job {
   @Prop({
     type: {
       _id: { type: Types.ObjectId, ref: "Comapny" },
-      name: {type:String},
+      name: { type: String },
+      logo: {type:String }
     }
   })
-  company: { _id:Types.ObjectId, name:string }
+  company: { _id:Types.ObjectId, name:string,logo:string }
 
   @Prop()
   location: string
@@ -43,7 +50,14 @@ export class Job {
   createdAt: Date
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
-  createdBy: { _id:Types.ObjectId, email:string };
+  createdBy: { _id: Types.ObjectId, email: string }
+  
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  updateBy: { _id: Types.ObjectId, email: string }
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deleteBy: { _id: Types.ObjectId, email: string }
 }
 
 export const JobSchema = SchemaFactory.createForClass(Job);

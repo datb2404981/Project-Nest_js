@@ -8,7 +8,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
-  @Post('upload') @UseInterceptors(FileInterceptor('file'))
+  @Post('upload') @UseInterceptors(FileInterceptor('fileUpload'))
   //tên field sử dụng trong form-data
   uploadFile(@UploadedFile(
     new ParseFilePipeBuilder()

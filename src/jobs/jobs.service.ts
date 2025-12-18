@@ -14,8 +14,11 @@ export class JobsService {
     private readonly jobModel: SoftDeleteModel<JobDocument>) { }
   
   
-  async create(createJobDto: CreateJobDto) {
-    const job = await this.jobModel.create({...createJobDto})
+  async create(createJobDto: CreateJobDto,user: IUser) {
+    const job = await this.jobModel.create({...createJobDto,createdBy: {
+        _id: user._id,
+        name : user.name
+      }})
     return {
       _id: job.id.toString(),
       createAt: job.createdAt
@@ -69,10 +72,9 @@ export class JobsService {
   }
 
   async findOne(id: string) {
-    const job = await this.jobModel.findOne({ _id: id, deleted: false })
-    .populate('createdBy','company')
-    .lean()
-    .exec();
+    const job = await this.jobModel.findOne({ _id: id, isDeleted: false })
+      .lean()
+      .exec();
     
     if (!job) {
       throw new NotFoundException("Job không tồn tại!");
@@ -82,12 +84,12 @@ export class JobsService {
   }
 
   async update(id: string, updateJobDto: UpdateJobDto, user :IUser) {
-    const job = await this.jobModel.findOne({_id: id, deleted: false});
+    const job = await this.jobModel.findOne({_id: id, isDeleted: false});
     if (!job) {
       throw new NotFoundException("Job không tồn tại!");
     }
 
-    const update = this.jobModel.updateOne({ _id: id, deleted: false }, {
+    const update = this.jobModel.updateOne({ _id: id, isDeleted: false }, {
       $set: {
         ...updateJobDto,
           updateBy: {
@@ -100,13 +102,11 @@ export class JobsService {
   }
 
   async remove(id: string, user :IUser) {
-    const job = await this.jobModel.findOne({ _id: id, deleted: false });
-    if (!job) {
-      throw new NotFoundException("Job không tồn tại!");
+    const deleted = await this.jobModel.deleteById(id, user._id);
+    if (deleted.deletedCount == 0) {
+      throw new NotFoundException("Resum không tồn tại!");
     }
 
-    const deleted = await this.jobModel.deleteById(id, user._id);
-    
     const deletedCount =
       (deleted as any).deletedCount ?? (deleted as any).modifiedCount ?? (deleted as any).nModified ?? 0;
 

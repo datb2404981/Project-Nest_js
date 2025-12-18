@@ -3,7 +3,7 @@ import { CompanyService } from './company.service';
 import { CreateCompayDto } from './dto/create-company.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { UpdateCompanyDto } from './dto/update-company.dto';
-import { ResponseMessage, User } from '@/decorator/customize';
+import { Public,ResponseMessage, User } from '@/decorator/customize';
 import { IUser } from '@/users/user.interface';
 
 @Controller('companies')
@@ -17,6 +17,7 @@ export class CompanyController {
   }
 
   @Get()
+  @Public()
   @ResponseMessage("Fetch list company with paginate")
   async findAll(
     @Query('current') currentPage: string,
@@ -29,6 +30,7 @@ export class CompanyController {
   }
 
   @Get(':id')
+  @Public()
   async findOne(@Param('id') id: string) {
     return this.companyService.findOne(id);
   }

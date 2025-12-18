@@ -97,6 +97,7 @@ export class UsersService {
     const user = await this.userModel
       .findOne({ _id: id, deleted: { $ne: true } })
       .populate('company')
+      .populate('role','name _id permission')
       .lean()
       .exec();
 
@@ -135,6 +136,10 @@ export class UsersService {
       throw new NotFoundException("User không tồn tại hoặc đã bị xóa.");
     }
 
+    if (userDelete.email === "admin@gmail.com") {
+      throw new BadRequestException("Không thể xóa tài khoản admin")
+    }
+
     const deleted = await this.userModel.deleteById(id, user._id); // hoặc delete({ _id: id }, user._id)
     const deletedCount =
       (deleted as any).deletedCount ?? (deleted as any).modifiedCount ?? (deleted as any).nModified ?? 0;
@@ -149,6 +154,7 @@ export class UsersService {
     if (!username) return null;
     const user = await this.userModel
       .findOne({ email: username })
+      .populate('role','name permission')
       .lean()
       .exec();
 
