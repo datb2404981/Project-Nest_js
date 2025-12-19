@@ -1,3 +1,4 @@
+import { RolesService } from '@/roles/roles.service';
 import { CreateUserDto, RegisterUserDto } from '@/users/dto/create-user.dto';
 import { IUser } from '@/users/user.interface';
 import { UsersService } from '@/users/users.service';
@@ -12,7 +13,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private roleService : RolesService,
   ) { }
   
   //kiem tra user co dung khong
@@ -21,7 +23,16 @@ export class AuthService {
     const user = await this.usersService.findOneByUsername(username);
     if (user) {
       const isVild = await this.usersService.isValidPass(password, user.password);
-      if (isVild === true) return user;
+      if (isVild === true) {
+        const userRole = await user.role as unknown as { _id: string; name: string }
+        const temp = await this.roleService.findOne(userRole._id);
+
+        const objUser = {
+          ...user,
+          permissions : temp?.permissions ?? []
+        }
+        return objUser;
+      }
     }
     return null
   }
@@ -31,16 +42,15 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Không tìm thấy thông tin người dùng, vui lòng kiểm tra lại tài khoản/mật khẩu');
     }
-    const { _id, name, email, role } = user;
+    const { _id, name, email, role,permissions } = user;
     const payload = {
       sub: "token login",
       iss: "from server",
-      _id, name, email, role
+      _id, name, email, role,permissions
     };
 
     //create Refresh Token
     const refresh_token = await this.createRefreshToken({ _id, name, email, role });
-    
     //update Refresh Token
     await this.usersService.updateUserRefreshToken(refresh_token, _id);
 
@@ -60,7 +70,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        _id, name, email, role
+        _id, name, email, role,permissions
       }
     };
   }
@@ -105,6 +115,10 @@ export class AuthService {
       //update Refresh Token
       await this.usersService.updateUserRefreshToken(refresh_token, _id.toString());
 
+      //fetch user's role
+      const userRole = await user.role as unknown as { _id: string; name: string }
+        const temp = await this.roleService.findOne(userRole._id);
+
       const refreshExpireRaw = await this.configService.get<string>('JWT_REFRESH_EXPIRE');
       const refreshExpireString = (refreshExpireRaw ?? '1d').trim() as ms.StringValue;
       const refreshMaxAgeMs = ms(refreshExpireString);
@@ -121,7 +135,7 @@ export class AuthService {
       return {
         access_token: this.jwtService.sign(payload),
         user: {
-          _id, name, email, role
+          _id, name, email,role,permissions : temp?.permissions
         }
       };
 

@@ -14,12 +14,16 @@ import { SoftDeleteModel } from 'mongoose-delete';
 import { UserResponse } from './schemas/user.class';
 import { IUser } from './user.interface';
 import aqp from 'api-query-params';
+import { Role } from '@/roles/schema/role.schema';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: SoftDeleteModel<UserDocument>,
+
+    @InjectModel(Role.name)
+    private readonly roleModel: SoftDeleteModel<UserDocument>,
   ) {}
 
   async hashPassword(password: string) {
@@ -33,10 +37,11 @@ export class UsersService {
       throw new ConflictException("Tài khoản đã tồn tại");
     }
     const password = await this.hashPassword(dto.password);
-
+    const roleId = await this.roleModel.findOne({ name: role });
     const created = await this.userModel.create({
       ...dto,
       password,
+      role : roleId,
     });
 
     const userObj = await this.userModel
@@ -154,7 +159,7 @@ export class UsersService {
     if (!username) return null;
     const user = await this.userModel
       .findOne({ email: username })
-      .populate('role','name permission')
+      .populate('role','name')
       .lean()
       .exec();
 
@@ -174,6 +179,7 @@ export class UsersService {
   async findUserByToken(refreshToken: string) {
     const user = await this.userModel
       .findOne({ refreshToken })
+      .populate('role','name')
       .select("-password")
       .lean()
       .exec();

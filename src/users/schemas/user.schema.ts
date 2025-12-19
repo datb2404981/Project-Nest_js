@@ -42,7 +42,7 @@ export class User {
   })
   role: {
     _id: mongoose.Types.ObjectId;
-  name: string;
+    name: string;
   };
 
 
